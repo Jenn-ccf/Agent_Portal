@@ -1,0 +1,31 @@
+# 忽略 Git 目錄
+.git
+.gitignore
+
+
+# 忽略 Python 相關
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+.venv/
+venv/
+
+# 忽略 Dockerfile 以外的本地環境檔案
+.env
+.DS_Store
+
+# 忽略 build 輸出資料夾
+build/
+dist/
+
+# 忽略臨時檔案
+*.log
+*.tmp
+
+# 忽略 IDE 設定檔
+.vscode/
+.idea/
+*.swp
