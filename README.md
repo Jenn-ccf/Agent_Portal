@@ -1173,3 +1173,209 @@ graph TD
     ```
 
 ---
+
+## frontend
+
+```
+│   # streamlit UI介面
+├── frontend/
+│   ├── config.py
+│   ├── requirements.txt
+│   ├── kw_mapping.json
+│   ├── intent.py
+│   └── app.py 
+```
+
+```mermaid
+flowchart TD
+
+subgraph Frontend["Streamlit App"]
+    A[app.py<br>Streamlit UI]
+    B[intent.py<br>Intent Classifier]
+    C[kw_mapping.json<br>Keyword Mapping]
+end
+
+A <--->|Call & Return intent| B
+C -.->|Load keywords| B
+
+%% Output from classifier goes to backend
+A -->|Choose backend| D[Call Retriever or Agent]
+```
+
+---
+
+### `kw_mapping.json`
+
+- 意圖編號與其實際意圖
+    - intent 1: 查詢商品與行銷資訊
+    - intent 2: 查詢投保/核保/醫務相關文件
+    - intent 3: 查詢理賠服務相關規範
+    - intent 4: 查詢契約與保單變更
+    - intent 5: 查詢繳費與收費管理相關文件
+    - intent 6: 查詢增員/組織發展/輔導相關文件
+    - intent 7: 下載申請書/表單/聲明書
+    - intent 8: 查詢制度/規範/獎勵辦法
+    - intent 9: 查詢E化相關文件或操作手冊
+    - intent 10: 查詢公司資訊/新聞/刊物
+- 每個關鍵字可能會對應到一個以上的意圖，後面夾帶不同的相關詞
+    ```
+    {
+        "keyword":"高齡",
+        "intent":1,
+        "related_words":"高齡保障、高齡社會專案、高齡醫療意外、非投資型相關"
+    },
+    {
+        "keyword":"高齡",
+        "intent":7,
+        "related_words":"高齡投保規範，高齡投保評估量表、高齡要保書(樂齡)"
+    },
+    ```
+
+---
+
+### `intent.py`
+
+
+
+> - 讀取 kw_mapping.json
+> - 對輸入 query 進行斷詞
+> - 根據關鍵字查找對應的意圖和相關詞
+
+
+#### jieba 斷詞
+
+- 主要邏輯：抽取關鍵字與搜尋意圖配對總表 `kw_mapping.json` 裡的關鍵字進行去重，建立 jieba 斷詞的自定義字典
+    
+
+#### `expand_query(query: str) -> Tuple[bool, list]`
+- 目的：匹配 query 中是否有對應到關鍵字意圖
+- 主要邏輯：
+    - 先對 query 進行 jieba 斷詞
+    - 匹配斷詞結果的列表中是否有匹配到關鍵字
+    - 使用 `config.INTENT_COLLECTION_MAP` 配對搜尋意圖與相關詞
+        ```
+        INTENT_COLLECTION_MAP = {
+            "1": "product-overview",
+            "2": "application-and-medical",
+            "3": "customer-policy-service",
+            "4": "customer-policy-service",
+            "5": "customer-policy-service",
+            "6": "customer-policy-service",
+            "7": "other",
+            "8": "other",
+            "9": "other",
+            "10": "other"   
+        }
+        ```
+        ```
+        results = [
+            (intent_collection, expanded_query),
+            (intent_collection, expanded_query),
+            ...
+        ]
+        # example
+        results = [
+            ('product-overview', '保險金 保額 保險金額 基本保額'),
+            ('application-and-medical', '保險金 理賠金 保險給付 給付金 保險金扣抵醫療費 保險金扣抵醫療費授權書 保險金扣抵醫療費服務流程 保險金扣抵醫療費相關問題')
+        ]        
+        ```
+
+
+---
+
+### `app.py`
+
+
+> - 建立使用者介面讓使用者能夠輸入查詢問題
+> - 分為 Agent 或 Document Search 進行查詢，最後顯示結果並收集使用者回饋
+
+- 查詢功能
+    - `run_agent()`
+    - `run_document_search()`
+- 結果展示
+    - `display_agent_results()`
+    - `display_document_results()`
+- 回饋處理
+    - `save_feedback()`
+- App 頁面設定
+    - Tab 1：智能問答
+    - Tab 2：評價統計
+
+
+```mermaid
+graph TD
+    subgraph "主查詢流程"
+        A[User Clicks 'Search' Button] --> B{Query Length > 8?};
+        B -- Yes --> C(run_agent);
+        B -- No --> D(intent.expand_query);
+        D --> E{Intent Found?};
+        E -- Yes<br>Search matched collections--> F(run_document_search);
+        E -- No<br>Search all collections --> F;
+        C --> H(display_agent_results);
+        F --> I(display_document_results);
+    end
+
+    subgraph "評價紀錄"
+        I --> L[User Clicks Feedback Button];
+        L --> M(save_feedback);
+    end
+
+```
+
+
+
+
+---
+
+#### `run_agent(query: str) -> Tuple[list, str]`
+
+- 目的：呼叫 Agent API，返回 steps 與最終答案
+
+
+#### `run_document_search(intent_classify: tuple) -> Tuple[List[Dict], int]`
+
+- 目的：呼叫 Retriever API，返回 final_results 與 total_counts
+- 主要邏輯：
+    - intent_classify 裡可能有多個`(intent, expand query)`，會依據意圖迭代，到指定的 collection 進行搜尋
+    - 將所有檢索回來的文件都存在 final_results 列表
+
+#### `display_agent_results(agent_steps: list) -> None`
+
+- 目的：接收 Agent API 回傳結果，整理成在 Streamlit 呈現的形式
+- 主要邏輯：
+    - Thouhgt
+    - Action
+    - Action Input
+    - Observation
+        - retrieved documents
+    - Final Answer 
+
+#### `display_document_results(query: str, results: dict, total_count: int, similarity_threshold: int) -> None`
+
+- 目的：接收 Retriever API 回傳結果，整理成在 Streamlit 呈現的形式
+- 主要邏輯：
+    - 對所有文件的相關性分數做排序
+    - 頁面呈現
+        - file name
+        - similarity score
+        - title
+        - summary
+    - 提供回饋按鈕：有幫助/沒幫助
+
+#### `save_feedback(query: str, pdf_name: str, rating: str) -> None`
+
+- 目的：儲存使用者回饋到 JSON 檔案
+- 主要邏輯：
+    - 在使用者按下回饋按鈕時觸發回饋儲存機制
+    - 儲存資料為：時間戳記、使用者查詢問題、使用者回饋之文件、使用者評價（有幫助/沒幫助）
+        ```
+        feedback_data = {
+            "timestamp": datetime.datetime.now().isoformat(),
+            "query": query,
+            "pdf_name": pdf_name,
+            "rating": rating
+        }  
+        ```
+    - 讀取舊有檔案內容並刪除舊檔案
+    - 將舊資料與新增資料合併，並建立新檔案 
+
