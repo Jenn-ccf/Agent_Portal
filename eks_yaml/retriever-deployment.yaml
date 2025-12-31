@@ -1,0 +1,45 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: retriever
+  namespace: agent-portal
+  labels:
+    app: retriever
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: retriever
+  template:
+    metadata:
+      labels:
+        app: retriever
+    spec:
+      containers:
+      - name: retriever 
+        image: 296062552549.dkr.ecr.ap-northeast-1.amazonaws.com/agent-portal/retriever-new:v0.0.2
+        ports:
+        - containerPort: 8000
+          name: retriever-port
+        volumeMounts:
+        - name: s3-storage
+          mountPath: /s3-mount
+      volumes:
+      - name: s3-storage
+        persistentVolumeClaim:
+          claimName: s3-claim
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: retriever
+  namespace: agent-portal
+spec:
+  selector:
+    app: retriever
+  ports:
+  - protocol: TCP
+    port: 8000
+    targetPort: 8000
+  type: ClusterIP

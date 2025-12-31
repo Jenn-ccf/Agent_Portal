@@ -1,0 +1,31 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend
+  namespace: agent-portal
+  labels:
+    app: frontend
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: frontend
+  template:
+    metadata:
+      labels:
+        app: frontend
+    spec:
+      containers:
+      - name: frontend
+        image: 296062552549.dkr.ecr.ap-northeast-1.amazonaws.com/agent-portal/frontend:v31
+        ports:
+        - containerPort: 8501
+          name: frontend-port
+        volumeMounts:
+        - name: s3-storage
+          mountPath: /s3-mount
+      volumes:
+      - name: s3-storage
+        persistentVolumeClaim:
+          claimName: s3-claim
+

@@ -1,0 +1,49 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: agent
+  namespace: agent-portal
+  labels:
+    app: agent
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: agent
+  template:
+    metadata:
+      labels:
+        app: agent
+    spec:
+      containers:
+      - name: agent 
+        image: 296062552549.dkr.ecr.ap-northeast-1.amazonaws.com/agent-portal/agent-new:v0.0.1
+        resources:
+          requests:
+            memory: "8Gi"
+            cpu: "2000m"
+        ports:
+        - containerPort: 8001
+          name: agent-port
+        volumeMounts:
+        - name: s3-storage
+          mountPath: /s3-mount
+      volumes:
+      - name: s3-storage
+        persistentVolumeClaim:
+          claimName: s3-claim
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: agent
+  namespace: agent-portal
+spec:
+  selector:
+    app: agent
+  ports:
+  - protocol: TCP
+    port: 8001
+    targetPort: 8001
+  type: ClusterIP
