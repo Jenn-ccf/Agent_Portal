@@ -124,3 +124,29 @@ FEW_SHOT_PROMPT = FewShotPromptTemplate(
     suffix=SUFFIX,
     input_variables=["input"],
 )
+
+# === 前端頁面設定 ===
+
+INTENT_COLLECTION_MAP = {
+    "1": "product-overview",
+    "2": "application-and-medical",
+    "3": "customer-policy-service",
+    "4": "customer-policy-service",
+    "5": "customer-policy-service",
+    "6": "customer-policy-service",
+    "7": "other",
+    "8": "other",
+    "9": "other",
+    "10": "other"   
+}
+
+ALL_COLLECTIONS = [
+    "product-overview",
+    "application-and-medical",
+    "customer-policy-service",  
+    "other"
+]
+# 回饋檔案存取路徑
+FEEDBACK_PATH = "/s3-mount/shared_data/feedback.json"
+# FEEDBACK_PATH = "./feedback.json" # 地端
+
