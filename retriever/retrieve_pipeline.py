@@ -47,7 +47,7 @@ class Retriever:
     async def retrieve(self, query: str, threshold_score: float, top_k: int, collection: str, search_type: str, categories: List[str] = None) -> Dict[str, Union[List[Any], int]]:
         """主要檢索流程"""
         # 執行向量搜尋
-        query_vector, search_result = await self.searcher.search(query, top_k, collection, search_type, categories)
+        query_vector, search_result = await self.searcher.search(query, top_k, search_type, collection, categories)
         # 處理搜尋結果
         results = self._process_search_results(search_type, search_result)
         print(f"📊 Search 後，相似度分數範圍: {min(r['similarity_score'] for r in results):.4f} - {max(r['similarity_score'] for r in results):.4f}")
